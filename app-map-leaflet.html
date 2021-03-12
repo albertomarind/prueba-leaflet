@@ -1,0 +1,190 @@
+<link rel="import" href="../polymer/polymer-element.html">
+
+
+<dom-module id="app-map-leaflet">
+  <template>
+
+    <style>
+      :host {
+        display: block;
+      }
+
+      #mapid {
+        height: 500px;
+      }
+    </style>
+    <div id="mapid"></div>
+  </template>
+
+  <script>
+    /**
+     * `example-google-maps`
+     * 
+     *
+     * @customElement
+     * @polymer
+     * @demo demo/index.html
+     */
+    class AppMapLeaflet extends Polymer.Element {
+      static get is() {
+        return 'app-map-leaflet';
+      }
+      static get properties() {
+        return {
+          map: {
+            type: Object
+          },
+          stylesMarkerIcon: {
+            type: Object,
+            computed: 'setStylesIcon(map)'
+          },
+          marker: {
+            type: Object
+          },
+          startDelivery: {
+            type: Boolean,
+            value: false,
+            observer: '_startDeliveryObserver',
+            reflectToAttribute: true
+          }
+        };
+      }
+      connectedCallback() {
+        super.connectedCallback();
+        this.loadResources()
+          .then(() => {
+            this.createMap();
+            var latlngs = [
+              [19.428845062896485, -99.16894629578543],
+              [19.431657410001627, -99.17036092495313],
+              [19.43331595085139, -99.1711255893681],
+              [19.433748610896146, -99.17146968835483],
+              [19.43309962039676, -99.173878381262],
+              [19.434433653609556, -99.17594297518245],
+              [19.43569556683245, -99.17838990131038],
+              [19.438219363857115, -99.18466014951318],
+              [19.440058105557025, -99.18997456719725],
+              [19.440923388562435, -99.19349202350615],
+              [19.440923388562435, -99.19785061067151],
+              [19.441211815205964, -99.20320326157635]
+            ];
+
+            var polyline = L.polyline(latlngs, {
+              color: 'red'
+            }).addTo(this.get('map'));
+
+          }).catch(err => {
+            console.error('Ocurrio un error: ', err);
+          });
+      }
+
+      loadStyles() {
+        let promise = new Promise((resolve, reject) => {
+          try {
+            let linkTag = document.createElement('link');
+            linkTag.rel = 'stylesheet';
+            linkTag.href = 'https://unpkg.com/leaflet@1.7.1/dist/leaflet.css';
+            linkTag.integrity =
+              'sha512-xodZBNTC5n17Xt2atTPuE1HxjVMSvLVW9ocqUKLsCC5CXdbqCmblAshOMAS6/keqq/sMZMZ19scR4PsZChSR7A==';
+            linkTag.crossOrigin = '';
+            linkTag.onload = () => {
+              resolve();
+            };
+            this.shadowRoot.appendChild(linkTag);
+          } catch (err) {
+            reject(err);
+          }
+        });
+        return promise;
+      }
+
+      _startDeliveryObserver(newVal, oldValue) {
+        console.log(newVal, oldValue);
+        if (newVal) {
+          this.loadCoordenates().then(coords => {
+            let index = 0;
+            let interval = setInterval(() => {
+              this.createMarker(coords[index].lat, coords[index].lng);
+              index++;
+              if (index === coords.length) {
+                clearInterval(interval);
+              }
+            }, 1000);
+          })
+        }
+      }
+
+      async loadCoordenates() {
+        let response = await fetch('/coordenates.json');
+        let coordenates = await response.json();
+        return coordenates;
+      }
+
+      async loadResources() {
+        await this.loadStyles();
+        await this.loadScript();
+      }
+
+      loadScript() {
+        let promise = new Promise((resolve, reject) => {
+          try {
+            let script = document.createElement("script");
+            script.src = "https://unpkg.com/leaflet@1.7.1/dist/leaflet.js";
+            script.integrity =
+              "sha512-XQoYMqMTK8LvdxXYG3nZ448hOEQiglfqkJs1NOQV44cWnUrBc8PkAOcXy20w0vlaXaVUearIOBhiXZ5V3ynxwA==";
+            script.crossOrigin = "";
+            script.onload = () => {
+              resolve();
+            }
+            this.shadowRoot.appendChild(script);
+          } catch (err) {
+            reject(err);
+          }
+        });
+        return promise;
+      }
+
+
+      createMap() {
+        // this.$.mapid
+        // this.shadowRoot.querySelector("#mapid")
+        // this.shadowRoot.getElementById('mapid')
+        let map = L.map(this.$.mapid).setView([19.432241, -99.177254], 13);
+        L.tileLayer(
+          'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+          }).addTo(map);
+        this.set('map', map);
+      }
+
+      setStylesIcon() {
+        const stylesMarkerIcon = L.icon({
+          // iconSize: [25, 41],
+          // iconAnchor: [10, 41],
+          // popupAnchor: [2, -40],
+          // path to url and shadow url
+          iconUrl: "https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png",
+          shadowUrl: "https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png"
+        });
+        return stylesMarkerIcon;
+      }
+
+      createMarker(lat, lng) {
+        let map = this.get('map');
+        if (!this.get('marker')) {
+          let marker = L.marker([lat, lng], {
+            icon: this.get('stylesMarkerIcon')
+          });
+          marker.addTo(map);
+          this.set('marker', marker);
+        } else {
+          let marker = this.get('marker');
+          marker.setLatLng(L.latLng(lat, lng));
+        }
+      }
+
+    }
+
+    window.customElements.define(AppMapLeaflet.is, AppMapLeaflet);
+  </script>
+</dom-module>

@@ -1,0 +1,50 @@
+<link rel="import" href="../polymer/polymer-element.html">
+<link rel="import" href="./app-map-leaflet.html">
+
+<dom-module id="example-google-maps">
+  <template>
+    <style>
+      :host {
+        display: block;
+      }
+    </style>
+    <button on-click="startDelivery">Iniciar entrega</button>
+    <app-map-leaflet start-delivery="[[start]]"></app-map-leaflet>
+  </template>
+
+  <script>
+    /**
+     * `example-google-maps`
+     * 
+     *
+     * @customElement
+     * @polymer
+     * @demo demo/index.html
+     */
+    class ExampleGoogleMaps extends Polymer.Element {
+      static get is() {
+        return 'example-google-maps';
+      }
+      static get properties() {
+        return {
+          prop1: {
+            type: String,
+            value: 'example-google-maps'
+          },
+          start: {
+            type: Boolean,
+            value: false
+          }
+        };
+      }
+
+      startDelivery() {
+        console.log('entre');
+        this.set('start', true);
+      }
+
+    }
+
+    window.customElements.define(ExampleGoogleMaps.is, ExampleGoogleMaps);
+  </script>
+</dom-module>
